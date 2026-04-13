@@ -12,23 +12,23 @@ This repo automates:
 - computing median estimates
 - writing a final Markdown summary to `output/summary.md`
 
-Approximate runtime for a full run is about 10 minutes, depending on machine speed, available disk space, and whether dependencies are already built.
+Approximate runtime ~10-15 minutes
 
 ## What is being compared
 
 The primary comparison is:
-- `libsignal v0.73.3` as a pre-SPQR, Double Ratchet-era baseline
-- `libsignal v0.92.1` as an SPQR-integrated, Triple Ratchet-era baseline
+- `libsignal v0.73.3` as pre-SPQR, Double Ratchet
+- `libsignal v0.92.1` as SPQR-integrated Double Ratchet, i.e. Triple Ratchet
 
-The repo also benchmarks standalone `SparsePostQuantumRatchet` as supporting subsystem evidence.
+The repo also benchmarks standalone `SparsePostQuantumRatchet`.
 
-## Native usage
+## How to run
 
-From the repo root, run:
-
+### Native
+From the repo root, run: 
 bash run.sh
 
-## Docker usage
+### Docker
 
 Build:
 
@@ -55,20 +55,16 @@ For libsignal v0.92.1:
 - session encrypt+decrypt ping pong
 
 Standalone SPQR support includes:
-- `benches/spqr.rs`
-- `benches/chain.rs`
+- `benches/spqr.rs` (public ratchet + symmetric ratchet, full spqr)
+- `benches/chain.rs` (symmetric ratchet)
 
 ## Main outputs
 
-After a successful run, the main files are:
+After a successful run, the main file is:
+- `output/summary.md`
+
+While intermediate files are: 
 - `output/v073_3/session_medians.csv`
 - `output/v092_1/session_medians.csv`
 - `output/spqr/spqr_medians.csv`
 - `output/spqr/chain_medians.csv`
-- `output/summary.md`
-
-## Notes
-
-- Benchmark timings depend on machine, load, OS, and toolchain.
-- Docker is provided for environment reproducibility, but native runs are preferable for final timing fidelity.
-- The scripts print high-level progress only; full benchmark logs are saved in `output/`.
