@@ -21,6 +21,14 @@ if [ ! -d workspace/SPQR/.git ]; then
   git clone "$SPQR_REPO" workspace/SPQR
 fi
 
+echo "[setup] marking mounted repos as safe for git"
+git config --global --add safe.directory /app/workspace/v073_3/libsignal || true
+git config --global --add safe.directory /app/workspace/v092_1/libsignal || true
+git config --global --add safe.directory /app/workspace/SPQR || true
+git config --global --add safe.directory "$(pwd)/workspace/v073_3/libsignal" || true
+git config --global --add safe.directory "$(pwd)/workspace/v092_1/libsignal" || true
+git config --global --add safe.directory "$(pwd)/workspace/SPQR" || true
+
 echo "[setup] checking out libsignal old tag: $LIBSIGNAL_OLD_TAG"
 git -C workspace/v073_3/libsignal fetch --tags
 git -C workspace/v073_3/libsignal checkout "$LIBSIGNAL_OLD_TAG"
