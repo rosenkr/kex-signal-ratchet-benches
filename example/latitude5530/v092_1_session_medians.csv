@@ -1,5 +1,5 @@
 benchmark,runs,median_estimate,unit,all_estimates
-decrypting on an existing chain,3,6.7042,µs,6.7332 | 6.7042 | 6.6143
-encrypting on an existing chain,3,7.3105,µs,7.3456 | 7.2772 | 7.3105
-session encrypt+decrypt 1 way,3,12.1310,µs,12.1310 | 12.9200 | 12.1300
-session encrypt+decrypt ping pong,3,220.0100,µs,220.2700 | 220.0100 | 219.6100
+decrypting on an existing chain,3,6.7229,µs,6.7229 | 9.0467 | 6.6332
+encrypting on an existing chain,3,6.8153,µs,6.5956 | 8.8192 | 6.8153
+session encrypt+decrypt 1 way,3,12.4220,µs,12.4220 | 12.8230 | 12.0200
+session encrypt+decrypt ping pong,3,225.1900,µs,240.6000 | 225.1900 | 218.7800

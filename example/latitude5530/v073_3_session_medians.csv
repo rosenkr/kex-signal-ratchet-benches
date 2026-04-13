@@ -1,5 +1,5 @@
 benchmark,runs,median_estimate,unit,all_estimates
-session decrypt,3,3.7174,µs,3.7174 | 3.8037 | 3.6904
-session encrypt,3,2.7772,µs,2.7860 | 2.7605 | 2.7772
-session encrypt+decrypt 1 way,3,5.8667,µs,5.8647 | 6.0042 | 5.8667
-session encrypt+decrypt ping pong,3,173.0500,µs,173.7700 | 173.0500 | 171.2600
+session decrypt,3,3.7719,µs,3.7542 | 3.7719 | 3.9431
+session encrypt,3,2.7677,µs,2.7578 | 2.7871 | 2.7677
+session encrypt+decrypt 1 way,3,5.9736,µs,6.7882 | 5.9202 | 5.9736
+session encrypt+decrypt ping pong,3,171.5900,µs,175.8200 | 171.3000 | 171.5900

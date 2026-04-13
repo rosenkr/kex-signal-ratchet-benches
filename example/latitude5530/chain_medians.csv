@@ -1,6 +1,6 @@
 benchmark,runs,median_estimate,unit,all_estimates
-tests::add_epoch,3,756.96,ns/iter,759.01 | 756.26 | 756.96
-tests::recv_key,3,496.92,ns/iter,498.07 | 496.92 | 496.09
-tests::recv_skip_key,3,997.33,ns/iter,996.91 | 997.33 | 998.25
-tests::recv_with_truncate,3,985.86,ns/iter,985.86 | 984.22 | 991.08
-tests::send_key,3,494.60,ns/iter,494.60 | 493.37 | 497.10
+tests::add_epoch,3,814.27,ns/iter,814.27 | 805.91 | 824.94
+tests::recv_key,3,544.12,ns/iter,542.83 | 544.12 | 607.31
+tests::recv_skip_key,3,1093.54,ns/iter,1092.64 | 1093.54 | 1250.74
+tests::recv_with_truncate,3,1080.08,ns/iter,1080.00 | 1080.08 | 1312.21
+tests::send_key,3,539.33,ns/iter,539.33 | 533.34 | 634.95
