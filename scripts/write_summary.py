@@ -8,13 +8,24 @@ def read_csv(path):
     with path.open(newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
 
-def write_table(rows, headers):
-    out = []
-    out.append("| " + " | ".join(headers) + " |")
-    out.append("|" + "|".join(["---"] * len(headers)) + "|")
+def write_md_table(rows, headers):
+    widths = {}
+    for h in headers:
+        widths[h] = max(len(h), *(len(str(row[h])) for row in rows)) if rows else len(h)
+
+    def fmt_row(row):
+        cells = [str(row[h]).ljust(widths[h]) for h in headers]
+        return "| " + " | ".join(cells) + " |"
+
+    sep = "| " + " | ".join("-" * widths[h] for h in headers) + " |"
+
+    out = [fmt_row({h: h for h in headers}), sep]
     for row in rows:
-        out.append("| " + " | ".join(str(row[h]) for h in headers) + " |")
+        out.append(fmt_row(row))
     return "\n".join(out)
+
+def ns_iter_to_us(value_str):
+    return float(value_str) / 1000.0
 
 def main():
     v073 = read_csv(ROOT / "v073_3" / "session_medians.csv")
@@ -48,18 +59,24 @@ def main():
         })
 
     spqr_rows = [
-        {"Benchmark": row["benchmark"], "Median": f'{row["median_estimate"]} {row["unit"]}'}
+        {
+            "Benchmark": row["benchmark"],
+            "Median": f'{ns_iter_to_us(row["median_estimate"]):.4f} µs/iter'
+        }
         for row in spqr
     ]
     chain_rows = [
-        {"Benchmark": row["benchmark"], "Median": f'{row["median_estimate"]} {row["unit"]}'}
+        {
+            "Benchmark": row["benchmark"],
+            "Median": f'{ns_iter_to_us(row["median_estimate"]):.4f} µs/iter'
+        }
         for row in chain
     ]
 
-    text = []
-    text.append("# Benchmark summary\n")
-    text.append("## libsignal version comparison\n")
-    text.append(write_table(comparison_rows, [
+    md = []
+    md.append("# Benchmark summary\n")
+    md.append("## libsignal version comparison\n")
+    md.append(write_md_table(comparison_rows, [
         "Old version",
         "New version",
         "Old median",
@@ -67,11 +84,11 @@ def main():
         "Absolute difference",
         "% difference",
     ]))
-    text.append("\n## Standalone SPQR (`benches/spqr.rs`)\n")
-    text.append(write_table(spqr_rows, ["Benchmark", "Median"]))
-    text.append("\n## Standalone SPQR chain (`benches/chain.rs`)\n")
-    text.append(write_table(chain_rows, ["Benchmark", "Median"]))
-    (ROOT / "summary.md").write_text("\n".join(text), encoding="utf-8")
+    md.append("\n## Standalone SPQR (`benches/spqr.rs`)\n")
+    md.append(write_md_table(spqr_rows, ["Benchmark", "Median"]))
+    md.append("\n## Standalone SPQR chain (`benches/chain.rs`)\n")
+    md.append(write_md_table(chain_rows, ["Benchmark", "Median"]))
+    (ROOT / "summary.md").write_text("\n".join(md), encoding="utf-8")
 
 if __name__ == "__main__":
     main()

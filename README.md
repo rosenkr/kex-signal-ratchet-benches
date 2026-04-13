@@ -5,12 +5,22 @@ Benchmark orchestration repo for comparing:
 - libsignal v0.92.1
 - standalone SparsePostQuantumRatchet
 
-The repo automates:
+This repo automates:
 - cloning pinned upstream versions
 - running the selected benchmark subset
 - parsing raw benchmark logs
 - computing median estimates
 - writing a final Markdown summary to `output/summary.md`
+
+Approximate runtime for a full run is about 10 minutes, depending on machine speed, available disk space, and whether dependencies are already built.
+
+## What is being compared
+
+The primary comparison is:
+- `libsignal v0.73.3` as a pre-SPQR, Double Ratchet-era baseline
+- `libsignal v0.92.1` as an SPQR-integrated, Triple Ratchet-era baseline
+
+The repo also benchmarks standalone `SparsePostQuantumRatchet` as supporting subsystem evidence.
 
 ## Native usage
 
@@ -45,17 +55,17 @@ For libsignal v0.92.1:
 - session encrypt+decrypt ping pong
 
 Standalone SPQR support includes:
-- benches/spqr.rs
-- benches/chain.rs
+- `benches/spqr.rs`
+- `benches/chain.rs`
 
 ## Main outputs
 
 After a successful run, the main files are:
-- output/v073_3/session_medians.csv
-- output/v092_1/session_medians.csv
-- output/spqr/spqr_medians.csv
-- output/spqr/chain_medians.csv
-- output/summary.md
+- `output/v073_3/session_medians.csv`
+- `output/v092_1/session_medians.csv`
+- `output/spqr/spqr_medians.csv`
+- `output/spqr/chain_medians.csv`
+- `output/summary.md`
 
 ## Notes
 
