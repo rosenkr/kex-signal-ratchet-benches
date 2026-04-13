@@ -1,0 +1,6 @@
+benchmark,runs,median_estimate,unit,all_estimates
+tests::add_epoch,3,756.96,ns/iter,759.01 | 756.26 | 756.96
+tests::recv_key,3,496.92,ns/iter,498.07 | 496.92 | 496.09
+tests::recv_skip_key,3,997.33,ns/iter,996.91 | 997.33 | 998.25
+tests::recv_with_truncate,3,985.86,ns/iter,985.86 | 984.22 | 991.08
+tests::send_key,3,494.60,ns/iter,494.60 | 493.37 | 497.10

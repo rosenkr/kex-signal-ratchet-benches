@@ -1,0 +1,10 @@
+workspace/*
+!workspace/.gitkeep
+
+output/*
+!output/.gitkeep
+
+**/target/
+__pycache__/
+*.pyc
+.DS_Store
