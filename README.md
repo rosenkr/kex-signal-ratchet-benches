@@ -70,3 +70,5 @@ While intermediate files are:
 - `output/v092_1/session_medians.csv`
 - `output/spqr/spqr_medians.csv`
 - `output/spqr/chain_medians.csv`
+
+  Output from an example run can be found at example/latitude5530
