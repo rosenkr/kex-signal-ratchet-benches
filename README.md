@@ -22,6 +22,8 @@ The primary comparison is:
 
 The repo also benchmarks standalone `SparsePostQuantumRatchet`.
 
+The only performance metric measured currently is execution time.
+
 ## How to run
 
 ### Native
