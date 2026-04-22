@@ -119,8 +119,8 @@ def main():
 
     md.append("## Comparison of libsignal v0.73.3 and v0.92.1 \n")
     md.append(write_md_table(comparison_rows, [
-        "v0.73.3",
-        "v0.92.1",
+        "v0.73.3 benchmark",
+        "v0.92.1 benchmark",
         "v0.73.3 median",
         "v0.92.1 median",
         "Median abs diff",

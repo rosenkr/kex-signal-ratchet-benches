@@ -24,6 +24,9 @@ The repo also benchmarks standalone `SparsePostQuantumRatchet`.
 
 The only performance metric measured currently is execution time.
 
+## Dependencies
+Cargo, git and a protobuf compiler (protoc) are requiered to run.
+
 ## How to run
 
 ### Native
