@@ -8,7 +8,7 @@ echo "[v092] entering libsignal v0.92.1 protocol bench directory"
 cd workspace/v092_1/libsignal/rust/protocol
 
 echo "[v092] listing session benchmarks"
-cargo bench --bench session -- --list > ../../../../../output/v092_1/session_list.txt 2>&1
+cargo bench --bench session -- --list 2>&1 | tee ../../../../../output/v092_1/session_list.txt
 
 run_one() {
   local run_id="$1"

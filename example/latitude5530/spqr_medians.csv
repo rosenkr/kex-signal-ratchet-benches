@@ -1,5 +1,0 @@
-benchmark,runs,median_estimate,unit,all_estimates
-tests::init_a,3,673.62,ns/iter,669.35 | 673.62 | 726.85
-tests::init_b,3,907.94,ns/iter,841.96 | 915.99 | 907.94
-tests::long_chain_send,3,6088.88,ns/iter,6088.88 | 6344.92 | 6044.01
-tests::send_recv,3,24347.51,ns/iter,25187.52 | 23463.56 | 24347.51

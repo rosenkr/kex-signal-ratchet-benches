@@ -1,7 +1,8 @@
 import csv
 import sys
-from statistics import median
+from statistics import median, mean, pvariance
 from collections import defaultdict
+
 
 def main():
     if len(sys.argv) != 2:
@@ -19,7 +20,15 @@ def main():
             unit_for[bench] = row["unit"]
 
     writer = csv.writer(sys.stdout)
-    writer.writerow(["benchmark", "runs", "median_estimate", "unit", "all_estimates"])
+    writer.writerow([
+        "benchmark",
+        "runs",
+        "median_estimate",
+        "mean_estimate",
+        "variance_estimate",
+        "unit",
+        "all_estimates",
+    ])
 
     for bench in sorted(groups):
         vals = groups[bench]
@@ -27,9 +36,12 @@ def main():
             bench,
             len(vals),
             f"{median(vals):.2f}",
+            f"{mean(vals):.2f}",
+            f"{pvariance(vals):.2f}",
             unit_for[bench],
             " | ".join(f"{v:.2f}" for v in vals),
         ])
+
 
 if __name__ == "__main__":
     main()

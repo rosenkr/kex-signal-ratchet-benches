@@ -1,29 +1,23 @@
 # Benchmark summary
 
-## libsignal version comparison
+Summary tables are rounded to two decimal places for readability. The underlying CSV outputs retain the computed values used to generate this report.
 
-| Old version                       | New version                       | Old median  | New median  | Absolute difference | % difference |
-| --------------------------------- | --------------------------------- | ----------- | ----------- | ------------------- | ------------ |
-| session encrypt                   | encrypting on an existing chain   | 2.7677 µs   | 6.8153 µs   | +4.0476 µs          | +146.24%     |
-| session decrypt                   | decrypting on an existing chain   | 3.7719 µs   | 6.7229 µs   | +2.9510 µs          | +78.24%      |
-| session encrypt+decrypt 1 way     | session encrypt+decrypt 1 way     | 5.9736 µs   | 12.4220 µs  | +6.4484 µs          | +107.95%     |
-| session encrypt+decrypt ping pong | session encrypt+decrypt ping pong | 171.5900 µs | 225.1900 µs | +53.6000 µs         | +31.24%      |
+## Comparison of libsignal v0.73.3 and v0.92.1 
+
+| v0.73.3 benchmark                 | v0.92.1 benchmark                 | v0.73.3 median | v0.92.1 median | Median abs diff | % difference | v0.73.3 mean | v0.92.1 mean | Mean abs diff | v0.73.3 variance | v0.92.1 variance | Variance abs diff |
+| --------------------------------- | --------------------------------- | -------------- | -------------- | --------------- | ------------ | ------------ | ------------ | ------------- | ---------------- | ---------------- | ----------------- |
+| session encrypt                   | encrypting on an existing chain   | 3.13 µs        | 7.54 µs        | +4.41 µs        | +140.91%     | 3.10 µs      | 7.32 µs      | +4.22 µs      | 0.02 µs²         | 0.14 µs²         | +0.12 µs²         |
+| session decrypt                   | decrypting on an existing chain   | 4.50 µs        | 7.40 µs        | +2.90 µs        | +64.45%      | 4.40 µs      | 7.21 µs      | +2.81 µs      | 0.09 µs²         | 0.16 µs²         | +0.07 µs²         |
+| session encrypt+decrypt 1 way     | session encrypt+decrypt 1 way     | 6.99 µs        | 13.80 µs       | +6.81 µs        | +97.34%      | 7.10 µs      | 13.64 µs     | +6.54 µs      | 0.04 µs²         | 0.78 µs²         | +0.73 µs²         |
+| session encrypt+decrypt ping pong | session encrypt+decrypt ping pong | 196.44 µs      | 252.44 µs      | +56.00 µs       | +28.51%      | 196.55 µs    | 253.83 µs    | +57.28 µs     | 3.59 µs²         | 5.67 µs²         | +2.07 µs²         |
 
 ## Standalone SPQR (`benches/spqr.rs`)
 
-| Benchmark              | Median          |
-| ---------------------- | --------------- |
-| tests::init_a          | 0.6736 µs/iter  |
-| tests::init_b          | 0.9079 µs/iter  |
-| tests::long_chain_send | 6.0889 µs/iter  |
-| tests::send_recv       | 24.3475 µs/iter |
+These benchmarks are included as supporting evidence that SPQR-related operations have measurable cost. They support the hypothesis that SPQR may contribute to the higher cost observed in v0.92.1, but they do not by themselves prove that SPQR is the sole cause of the slowdown.
 
-## Standalone SPQR chain (`benches/chain.rs`)
-
-| Benchmark                 | Median         |
-| ------------------------- | -------------- |
-| tests::add_epoch          | 0.8143 µs/iter |
-| tests::recv_key           | 0.5441 µs/iter |
-| tests::recv_skip_key      | 1.0935 µs/iter |
-| tests::recv_with_truncate | 1.0801 µs/iter |
-| tests::send_key           | 0.5393 µs/iter |
+| Benchmark              | Median        | Mean          | Variance         |
+| ---------------------- | ------------- | ------------- | ---------------- |
+| tests::init_a          | 0.74 µs/iter  | 0.72 µs/iter  | 0.00 (µs/iter)^2 |
+| tests::init_b          | 0.93 µs/iter  | 0.91 µs/iter  | 0.00 (µs/iter)^2 |
+| tests::long_chain_send | 6.59 µs/iter  | 6.73 µs/iter  | 0.05 (µs/iter)^2 |
+| tests::send_recv       | 25.58 µs/iter | 25.47 µs/iter | 0.09 (µs/iter)^2 |
