@@ -21,6 +21,15 @@ BENCH_RE = re.compile(
     r"test\s+(tests::[A-Za-z0-9_]+)\s+\.\.\.\s+bench:\s+([0-9,]+\.[0-9]+)\s+([a-zµ/]+)\s+\(\+/-\s+([0-9,]+\.[0-9]+)\)"
 )
 
+
+def ns_to_us(value_str):
+    return float(value_str.replace(",", "")) / 1000.0
+
+
+def fmt_2(value):
+    return f"{value:.2f}"
+
+
 def parse_file(path: Path):
     lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
     results = []
@@ -37,9 +46,9 @@ def parse_file(path: Path):
         results.append({
             "file": path.name,
             "benchmark": bench,
-            "estimate": estimate.replace(",", ""),
-            "unit": unit,
-            "plusminus": plusminus.replace(",", ""),
+            "estimate": fmt_2(ns_to_us(estimate)),
+            "unit": "µs/iter" if unit == "ns/iter" else unit,
+            "plusminus": fmt_2(ns_to_us(plusminus)),
         })
 
     return results

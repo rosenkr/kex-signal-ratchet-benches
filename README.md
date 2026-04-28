@@ -9,7 +9,6 @@ This repo automates:
 - cloning pinned upstream versions
 - running the selected benchmark subset
 - parsing raw benchmark logs
-- computing median estimates
 - writing a final Markdown summary to `output/summary.md`
 
 Approximate runtime ~10-15 minutes
@@ -25,7 +24,7 @@ The repo also benchmarks standalone `SparsePostQuantumRatchet`.
 The only performance metric measured currently is execution time.
 
 ## Dependencies
-Cargo, git and a protobuf compiler (protoc) are requiered to run.
+Cargo, git and a protobuf compiler (protoc) are required to run.
 
 ## How to run
 
@@ -69,9 +68,13 @@ After a successful run, the main file is:
 - `output/summary.md`
 
 While intermediate files are: 
-- `output/v073_3/session_medians.csv`
-- `output/v092_1/session_medians.csv`
-- `output/spqr/spqr_medians.csv`
-- `output/spqr/chain_medians.csv`
+- `output/v073_3/session_full.txt`
+- `output/v073_3/session_values.csv`
+- `output/v092_1/session_full.txt`
+- `output/v092_1/session_values.csv`
+- `output/spqr/spqr_full.txt`
+- `output/spqr/spqr_values.csv`
+- `output/spqr/chain_full.txt`
+- `output/spqr/chain_values.csv`
 
-  Output from an example run can be found at example/latitude5530
+The `session_values.csv` files include Criterion's reported sample count, actual total measured sample time, `R²`, and the reported timing interval.
