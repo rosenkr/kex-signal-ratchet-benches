@@ -41,6 +41,9 @@ echo "[setup] checking out SPQR ref: $SPQR_REF"
 git -C workspace/SPQR fetch --tags
 git -C workspace/SPQR checkout "$SPQR_REF"
 
+echo "[setup] applying benchmark counter patches"
+bash scripts/patch_workspace.sh
+
 echo "[setup] writing version info"
 mkdir -p output/metadata
 

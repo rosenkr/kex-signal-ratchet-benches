@@ -1,0 +1,179 @@
+diff --git a/rust/protocol/benches/session.rs b/rust/protocol/benches/session.rs
+index 683d12ed..13efcf33 100644
+--- a/rust/protocol/benches/session.rs
++++ b/rust/protocol/benches/session.rs
+@@ -3,6 +3,7 @@
+ // SPDX-License-Identifier: AGPL-3.0-only
+ //
+ 
++use std::sync::atomic::{AtomicU64, Ordering};
+ use std::time::SystemTime;
+ 
+ use criterion::{criterion_group, criterion_main, Criterion};
+@@ -14,6 +15,28 @@ use rand::TryRngCore as _;
+ #[path = "../tests/support/mod.rs"]
+ mod support;
+ 
++static BENCH_SEND_COUNT: AtomicU64 = AtomicU64::new(0);
++static BENCH_RECV_COUNT: AtomicU64 = AtomicU64::new(0);
++
++fn reset_ratchet_counts() {
++    reset_bench_dr_dh_ratchet_count();
++    BENCH_SEND_COUNT.store(0, Ordering::Relaxed);
++    BENCH_RECV_COUNT.store(0, Ordering::Relaxed);
++}
++
++fn print_ratchet_counts(name: &str) {
++    let sends = BENCH_SEND_COUNT.load(Ordering::Relaxed);
++    let recvs = BENCH_RECV_COUNT.load(Ordering::Relaxed);
++    let iterations = sends.max(recvs);
++    eprintln!(
++        "[ratchet-counts] version=v073 bench=\"{name}\" iterations={iterations} sends={} recvs={} dr_symmetric={} dr_dh={} spqr_symmetric=0 braid_add_epoch=0",
++        sends,
++        recvs,
++        sends + recvs,
++        bench_dr_dh_ratchet_count(),
++    );
++}
++
+ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolError> {
+     let (alice_session_record, bob_session_record) = support::initialize_sessions_v3()?;
+ 
+@@ -53,23 +76,29 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
+         .now_or_never()
+         .expect("sync")?;
+ 
++    reset_ratchet_counts();
+     c.bench_function("session encrypt", |b| {
+         b.iter(|| {
++            BENCH_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
+             support::encrypt(&mut alice_store, &bob_address, "a short message")
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
+-        })
++        });
+     });
++    print_ratchet_counts("session encrypt");
++    reset_ratchet_counts();
+     c.bench_function("session decrypt", |b| {
+         b.iter(|| {
++            BENCH_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
+             let mut bob_store = bob_store.clone();
+             support::decrypt(&mut bob_store, &alice_address, &message_to_decrypt)
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
+-        })
++        });
+     });
++    print_ratchet_counts("session decrypt");
+ 
+     // Archive on Alice's side...
+     let mut state = alice_store
+@@ -200,40 +229,50 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
+         .now_or_never()
+         .expect("sync")?;
+ 
++    reset_ratchet_counts();
+     c.bench_function("session encrypt+decrypt 1 way", |b| {
+         b.iter(|| {
++            BENCH_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
+             let ctext = support::encrypt(&mut alice_store, &bob_address, "a short message")
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
++            BENCH_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
+             let _ptext = support::decrypt(&mut bob_store, &alice_address, &ctext)
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
+-        })
++        });
+     });
++    print_ratchet_counts("session encrypt+decrypt 1 way");
+ 
++    reset_ratchet_counts();
+     c.bench_function("session encrypt+decrypt ping pong", |b| {
+         b.iter(|| {
++            BENCH_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
+             let ctext = support::encrypt(&mut alice_store, &bob_address, "a short message")
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
++            BENCH_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
+             let _ptext = support::decrypt(&mut bob_store, &alice_address, &ctext)
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
+ 
++            BENCH_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
+             let ctext = support::encrypt(&mut bob_store, &alice_address, "a short message")
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
++            BENCH_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
+             let _ptext = support::decrypt(&mut alice_store, &bob_address, &ctext)
+                 .now_or_never()
+                 .expect("sync")
+                 .expect("success");
+-        })
++        });
+     });
++    print_ratchet_counts("session encrypt+decrypt ping pong");
+ 
+     Ok(())
+ }
+diff --git a/rust/protocol/src/bench_metrics.rs b/rust/protocol/src/bench_metrics.rs
+new file mode 100644
+index 00000000..2a6e0d98
+--- /dev/null
++++ b/rust/protocol/src/bench_metrics.rs
+@@ -0,0 +1,15 @@
++use std::sync::atomic::{AtomicU64, Ordering};
++
++static DR_DH_RATCHET_COUNT: AtomicU64 = AtomicU64::new(0);
++
++pub fn reset_bench_dr_dh_ratchet_count() {
++    DR_DH_RATCHET_COUNT.store(0, Ordering::Relaxed);
++}
++
++pub fn bench_dr_dh_ratchet_count() -> u64 {
++    DR_DH_RATCHET_COUNT.load(Ordering::Relaxed)
++}
++
++pub(crate) fn increment_bench_dr_dh_ratchet_count() {
++    DR_DH_RATCHET_COUNT.fetch_add(1, Ordering::Relaxed);
++}
+diff --git a/rust/protocol/src/lib.rs b/rust/protocol/src/lib.rs
+index 51ce9418..c6d0efb6 100644
+--- a/rust/protocol/src/lib.rs
++++ b/rust/protocol/src/lib.rs
+@@ -22,6 +22,7 @@
+ // https://doc.rust-lang.org/rustdoc/what-to-include.html for background.
+ // #![warn(missing_docs)]
+ 
++mod bench_metrics;
+ mod consts;
+ mod crypto;
+ pub mod error;
+@@ -41,6 +42,7 @@ mod state;
+ mod storage;
+ mod timestamp;
+ 
++pub use bench_metrics::{bench_dr_dh_ratchet_count, reset_bench_dr_dh_ratchet_count};
+ use error::Result;
+ pub use error::SignalProtocolError;
+ pub use fingerprint::{DisplayableFingerprint, Fingerprint, ScannableFingerprint};
+diff --git a/rust/protocol/src/session_cipher.rs b/rust/protocol/src/session_cipher.rs
+index a0579a9d..7fe4079c 100644
+--- a/rust/protocol/src/session_cipher.rs
++++ b/rust/protocol/src/session_cipher.rs
+@@ -673,6 +673,7 @@ fn get_or_create_chain_key<R: Rng + CryptoRng>(
+     }
+ 
+     log::info!("{remote_address} creating new chains.");
++    crate::bench_metrics::increment_bench_dr_dh_ratchet_count();
+ 
+     let root_key = state.root_key()?;
+     let our_ephemeral = state.sender_ratchet_private_key()?;
