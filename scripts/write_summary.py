@@ -46,7 +46,6 @@ def main():
     v073 = read_csv(ROOT / "v073_3" / "session_values.csv")
     v092 = read_csv(ROOT / "v092_1" / "session_values.csv")
     spqr = read_csv(ROOT / "spqr" / "spqr_values.csv")
-    chain = read_csv(ROOT / "spqr" / "chain_values.csv")
 
     v073_map = {row["benchmark"]: row for row in v073}
     v092_map = {row["benchmark"]: row for row in v092}
@@ -68,17 +67,14 @@ def main():
             "v0.73.3 R²": v073_map[v073_name]["r_squared"] or "-",
             "v0.73.3 time": criterion_range(v073_map[v073_name]),
             "v0.73.3 sends/recvs": f"{v073_map[v073_name]['sends'] or '-'} / {v073_map[v073_name]['recvs'] or '-'}",
-            "v0.73.3 DR sym": v073_map[v073_name]["dr_symmetric"] or "-",
             "v0.73.3 DR DH": v073_map[v073_name]["dr_dh"] or "-",
             "v0.92.1 sampling": v092_map[v092_name]["samples"] or "-",
             "v0.92.1 measured total": v092_map[v092_name]["measured_total"] or "-",
             "v0.92.1 R²": v092_map[v092_name]["r_squared"] or "-",
             "v0.92.1 time": criterion_range(v092_map[v092_name]),
             "v0.92.1 sends/recvs": f"{v092_map[v092_name]['sends'] or '-'} / {v092_map[v092_name]['recvs'] or '-'}",
-            "v0.92.1 DR sym": v092_map[v092_name]["dr_symmetric"] or "-",
             "v0.92.1 DR DH": v092_map[v092_name]["dr_dh"] or "-",
-            "v0.92.1 SPQR sym": v092_map[v092_name]["spqr_symmetric"] or "-",
-            "v0.92.1 Braid": v092_map[v092_name]["braid_add_epoch"] or "-",
+            "v0.92.1 Braid add_epoch": v092_map[v092_name].get("braid_add_epoch", "") or "-",
         })
 
     spqr_rows = [
@@ -87,14 +83,7 @@ def main():
             "Reported value": spqr_value(row),
         }
         for row in spqr
-    ]
-
-    chain_rows = [
-        {
-            "Benchmark": row["benchmark"],
-            "Reported value": spqr_value(row),
-        }
-        for row in chain
+        if row["benchmark"] == "tests::send_recv"
     ]
 
     md = []
@@ -110,24 +99,18 @@ def main():
         "v0.73.3 R²",
         "v0.73.3 time",
         "v0.73.3 sends/recvs",
-        "v0.73.3 DR sym",
         "v0.73.3 DR DH",
         "v0.92.1 sampling",
         "v0.92.1 measured total",
         "v0.92.1 R²",
         "v0.92.1 time",
         "v0.92.1 sends/recvs",
-        "v0.92.1 DR sym",
         "v0.92.1 DR DH",
-        "v0.92.1 SPQR sym",
-        "v0.92.1 Braid",
+        "v0.92.1 Braid add_epoch",
     ]))
 
     md.append("\n## Standalone SPQR (`benches/spqr.rs`)\n")
     md.append(write_md_table(spqr_rows, ["Benchmark", "Reported value"]))
-
-    md.append("\n## Standalone SPQR (`benches/chain.rs`)\n")
-    md.append(write_md_table(chain_rows, ["Benchmark", "Reported value"]))
 
     summary_path = ROOT / "summary.md"
     summary_path.unlink(missing_ok=True)

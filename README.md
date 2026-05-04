@@ -34,12 +34,7 @@ Only steady-state session benchmarks are included (no setup/teardown noise).
 |---|---|
 | v0.73.3 | session encrypt, session decrypt, encrypt+decrypt 1 way, encrypt+decrypt ping pong |
 | v0.92.1 | encrypting on an existing chain, decrypting on an existing chain, encrypt+decrypt 1 way, encrypt+decrypt ping pong |
-| SPQR standalone | `benches/spqr.rs` (full SPQR), `benches/chain.rs` (symmetric ratchet only) |
+| SPQR standalone | `benches/spqr.rs` (full SPQR)
 
 ## Output
-
-Main result: `output/summary.md`
-
-Intermediate files per version: `output/{v073_3,v092_1,spqr}/{bench}_full.txt` (raw logs) and `{bench}_values.csv` (Criterion sample count, total measured time, R², timing interval).
-
 An example summary is in `example/`.

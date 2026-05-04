@@ -3,5 +3,11 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/SPQR" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/SPQR_ro" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/v073_3/libsignal" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/v073_3_ro/libsignal" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/v092_1/libsignal" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/workspace/v092_1_ro/libsignal" vcs="Git" />
   </component>
 </project>

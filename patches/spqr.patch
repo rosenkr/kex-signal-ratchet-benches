@@ -1,54 +1,70 @@
 diff --git a/src/bench_metrics.rs b/src/bench_metrics.rs
 new file mode 100644
-index 0000000..ebbcee0
+index 0000000..fae7299
 --- /dev/null
 +++ b/src/bench_metrics.rs
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,59 @@
 +use std::sync::atomic::{AtomicU64, Ordering};
 +
 +static BRAID_ADD_EPOCH_COUNT: AtomicU64 = AtomicU64::new(0);
++static SPQR_SEND_COUNT: AtomicU64 = AtomicU64::new(0);
++static SPQR_RECV_COUNT: AtomicU64 = AtomicU64::new(0);
++static CHAIN_SEND_KEY_COUNT: AtomicU64 = AtomicU64::new(0);
++static CHAIN_RECV_KEY_COUNT: AtomicU64 = AtomicU64::new(0);
 +
 +pub fn reset_bench_braid_ratchet_count() {
 +    BRAID_ADD_EPOCH_COUNT.store(0, Ordering::Relaxed);
++}
++
++pub fn reset_bench_spqr_metrics() {
++    reset_bench_braid_ratchet_count();
++    SPQR_SEND_COUNT.store(0, Ordering::Relaxed);
++    SPQR_RECV_COUNT.store(0, Ordering::Relaxed);
++    CHAIN_SEND_KEY_COUNT.store(0, Ordering::Relaxed);
++    CHAIN_RECV_KEY_COUNT.store(0, Ordering::Relaxed);
 +}
 +
 +pub fn bench_braid_ratchet_count() -> u64 {
 +    BRAID_ADD_EPOCH_COUNT.load(Ordering::Relaxed)
 +}
 +
++pub fn bench_spqr_send_count() -> u64 {
++    SPQR_SEND_COUNT.load(Ordering::Relaxed)
++}
++
++pub fn bench_spqr_recv_count() -> u64 {
++    SPQR_RECV_COUNT.load(Ordering::Relaxed)
++}
++
++pub fn bench_chain_send_key_count() -> u64 {
++    CHAIN_SEND_KEY_COUNT.load(Ordering::Relaxed)
++}
++
++pub fn bench_chain_recv_key_count() -> u64 {
++    CHAIN_RECV_KEY_COUNT.load(Ordering::Relaxed)
++}
++
 +pub(crate) fn increment_bench_braid_ratchet_count() {
 +    BRAID_ADD_EPOCH_COUNT.fetch_add(1, Ordering::Relaxed);
 +}
-diff --git a/src/chain.rs b/src/chain.rs
-index 9f3f368..0f45434 100644
---- a/src/chain.rs
-+++ b/src/chain.rs
-@@ -457,8 +457,8 @@ mod test {
-     use super::*;
-     use crate::{Direction, EpochSecret, Error};
-     use proptest::prelude::*;
--    use rand::TryRngCore;
-     use rand::seq::SliceRandom;
-+    use rand::TryRngCore;
- 
-     #[test]
-     fn directions_match() {
-diff --git a/src/encoding/gf.rs b/src/encoding/gf.rs
-index 3d78854..963e119 100644
---- a/src/encoding/gf.rs
-+++ b/src/encoding/gf.rs
-@@ -591,8 +591,8 @@ impl GF16 {
- #[cfg(test)]
- mod test {
-     use super::*;
--    use galois_field_2pm::GaloisField;
-     use galois_field_2pm::gf2::GFu16;
-+    use galois_field_2pm::GaloisField;
-     use rand::RngCore;
- 
-     // https://web.eecs.utk.edu/~jplank/plank/papers/CS-07-593/primitive-polynomial-table.txt
++
++pub(crate) fn increment_bench_spqr_send_count() {
++    SPQR_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
++}
++
++pub(crate) fn increment_bench_spqr_recv_count() {
++    SPQR_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
++}
++
++pub(crate) fn increment_bench_chain_send_key_count() {
++    CHAIN_SEND_KEY_COUNT.fetch_add(1, Ordering::Relaxed);
++}
++
++pub(crate) fn increment_bench_chain_recv_key_count() {
++    CHAIN_RECV_KEY_COUNT.fetch_add(1, Ordering::Relaxed);
++}
 diff --git a/src/lib.rs b/src/lib.rs
-index 7c3076f..013125e 100644
+index 7c3076f..e98b204 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
 @@ -2,6 +2,7 @@
@@ -59,23 +75,46 @@ index 7c3076f..013125e 100644
  #[cfg(feature = "test-utils")]
  pub mod chain;
  #[cfg(not(feature = "test-utils"))]
-@@ -22,6 +23,7 @@ pub mod proto;
+@@ -22,6 +23,11 @@ pub mod proto;
  #[cfg(not(feature = "test-utils"))]
  mod proto;
  
-+pub use crate::bench_metrics::{bench_braid_ratchet_count, reset_bench_braid_ratchet_count};
++pub use crate::bench_metrics::{
++    bench_braid_ratchet_count, bench_chain_recv_key_count, bench_chain_send_key_count,
++    bench_spqr_recv_count, bench_spqr_send_count, reset_bench_braid_ratchet_count,
++    reset_bench_spqr_metrics,
++};
  use crate::chain::Chain;
  pub use crate::chain::ChainParams;
  use crate::proto::pq_ratchet as pqrpb;
-@@ -293,6 +295,7 @@ pub fn send<R: Rng + CryptoRng>(state: &SerializedState, rng: &mut R) -> Result<
+@@ -261,6 +267,7 @@ pub fn current_version(state: &SerializedState) -> Result<CurrentVersion, Error>
+ 
+ #[hax_lib::fstar::verification_status(lax)]
+ pub fn send<R: Rng + CryptoRng>(state: &SerializedState, rng: &mut R) -> Result<Send, Error> {
++    crate::bench_metrics::increment_bench_spqr_send_count();
+     let state_pb = decode_state(state)?;
+     match state_pb.inner {
+         None => Ok(Send {
+@@ -293,8 +300,10 @@ pub fn send<R: Rng + CryptoRng>(state: &SerializedState, rng: &mut R) -> Result<
                  }
                  Some(mut chain) => {
                      if let Some(epoch_secret) = key {
 +                        crate::bench_metrics::increment_bench_braid_ratchet_count();
                          chain.add_epoch(epoch_secret);
                      }
++                    crate::bench_metrics::increment_bench_chain_send_key_count();
                      let (index, msg_key) = chain.send_key(msg.epoch - 1)?;
-@@ -425,6 +428,7 @@ pub fn recv(state: &SerializedState, msg: &SerializedMessage) -> Result<Recv, Er
+                     (index, msg_key, Some(chain.into_pb()))
+                 }
+@@ -352,6 +361,7 @@ fn chain_from(
+ }
+ 
+ pub fn recv(state: &SerializedState, msg: &SerializedMessage) -> Result<Recv, Error> {
++    crate::bench_metrics::increment_bench_spqr_recv_count();
+     // Perform version negotiation.  At the beginning of our interaction
+     // with a remote party, we are set to allow negotiation.  This
+     // allows either side to downgrade the connection to a protocol version
+@@ -425,11 +435,13 @@ pub fn recv(state: &SerializedState, msg: &SerializedMessage) -> Result<Recv, Er
              let msg_key_epoch = scka_msg.epoch - 1;
              let mut chain = chain_from(state_pb.chain, state_pb.version_negotiation.as_ref())?;
              if let Some(epoch_secret) = key {
@@ -83,3 +122,9 @@ index 7c3076f..013125e 100644
                  chain.add_epoch(epoch_secret);
              }
              let msg_key = if msg_key_epoch == 0 && index == 0 {
+                 vec![]
+             } else {
++                crate::bench_metrics::increment_bench_chain_recv_key_count();
+                 chain.recv_key(msg_key_epoch, index)?
+             };
+ 

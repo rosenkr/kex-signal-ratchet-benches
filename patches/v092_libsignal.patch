@@ -25,7 +25,7 @@ index 68eaf9ba..f00a56f5 100644
  opt-level = 2 # libsignal-account-keys unit tests are too slow with an unoptimized argon2
  
 diff --git a/rust/protocol/benches/session.rs b/rust/protocol/benches/session.rs
-index 4c65c1fa..e3d92b7d 100644
+index 4c65c1fa..9c50f0ee 100644
 --- a/rust/protocol/benches/session.rs
 +++ b/rust/protocol/benches/session.rs
 @@ -3,6 +3,7 @@
@@ -36,11 +36,14 @@ index 4c65c1fa..e3d92b7d 100644
  use std::time::SystemTime;
  
  use criterion::{Criterion, criterion_group, criterion_main};
-@@ -10,10 +11,36 @@ use futures_util::FutureExt;
+@@ -10,10 +11,45 @@ use futures_util::FutureExt;
  use libsignal_protocol::*;
  use rand::TryRngCore as _;
  use rand::rngs::OsRng;
-+use spqr::{bench_braid_ratchet_count, reset_bench_braid_ratchet_count};
++use spqr::{
++    bench_braid_ratchet_count, bench_chain_recv_key_count, bench_chain_send_key_count,
++    bench_spqr_recv_count, bench_spqr_send_count, reset_bench_spqr_metrics,
++};
  
  #[path = "../tests/support/mod.rs"]
  mod support;
@@ -50,7 +53,8 @@ index 4c65c1fa..e3d92b7d 100644
 +
 +fn reset_ratchet_counts() {
 +    reset_bench_dr_dh_ratchet_count();
-+    reset_bench_braid_ratchet_count();
++    reset_bench_pq_ratchet_count();
++    reset_bench_spqr_metrics();
 +    BENCH_SEND_COUNT.store(0, Ordering::Relaxed);
 +    BENCH_RECV_COUNT.store(0, Ordering::Relaxed);
 +}
@@ -60,12 +64,16 @@ index 4c65c1fa..e3d92b7d 100644
 +    let recvs = BENCH_RECV_COUNT.load(Ordering::Relaxed);
 +    let iterations = sends.max(recvs);
 +    eprintln!(
-+        "[ratchet-counts] version=v092 bench=\"{name}\" iterations={iterations} sends={} recvs={} dr_symmetric={} dr_dh={} spqr_symmetric={} braid_add_epoch={}",
++        "[ratchet-counts] version=v092 bench=\"{name}\" iterations={iterations} sends={} recvs={} dr_dh={} pq_send={} pq_recv={} spqr_send={} spqr_recv={} spqr_chain_send={} spqr_chain_recv={} braid_add_epoch={}",
 +        sends,
 +        recvs,
-+        sends + recvs,
 +        bench_dr_dh_ratchet_count(),
-+        sends + recvs,
++        bench_pq_ratchet_send_count(),
++        bench_pq_ratchet_recv_count(),
++        bench_spqr_send_count(),
++        bench_spqr_recv_count(),
++        bench_chain_send_key_count(),
++        bench_chain_recv_key_count(),
 +        bench_braid_ratchet_count(),
 +    );
 +}
@@ -73,7 +81,7 @@ index 4c65c1fa..e3d92b7d 100644
  pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolError> {
      let (alice_session_record, bob_session_record) = support::initialize_sessions_v4()?;
  
-@@ -82,8 +109,10 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
+@@ -82,8 +118,10 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
          CiphertextMessageType::Whisper
      );
  
@@ -84,7 +92,7 @@ index 4c65c1fa..e3d92b7d 100644
              support::encrypt(
                  &mut alice_store,
                  &bob_address,
-@@ -93,10 +122,13 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
+@@ -93,10 +131,13 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
              .now_or_never()
              .expect("sync")
              .expect("success");
@@ -99,7 +107,7 @@ index 4c65c1fa..e3d92b7d 100644
              let mut bob_store = bob_store.clone();
              support::decrypt(
                  &mut bob_store,
-@@ -107,8 +139,9 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
+@@ -107,8 +148,9 @@ pub fn session_encrypt_result(c: &mut Criterion) -> Result<(), SignalProtocolErr
              .now_or_never()
              .expect("sync")
              .expect("success");
@@ -110,7 +118,7 @@ index 4c65c1fa..e3d92b7d 100644
  
      // Archive on Alice's side...
      let mut state = alice_store
-@@ -357,8 +390,10 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
+@@ -357,8 +399,10 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
          .expect("sync")
          .expect("success");
  
@@ -121,7 +129,7 @@ index 4c65c1fa..e3d92b7d 100644
              let ctext = support::encrypt(
                  &mut alice_store,
                  &bob_address,
-@@ -368,15 +403,19 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
+@@ -368,15 +412,19 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
              .now_or_never()
              .expect("sync")
              .expect("success");
@@ -142,7 +150,7 @@ index 4c65c1fa..e3d92b7d 100644
              let ctext = support::encrypt(
                  &mut alice_store,
                  &bob_address,
-@@ -386,11 +425,13 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
+@@ -386,11 +434,13 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
              .now_or_never()
              .expect("sync")
              .expect("success");
@@ -156,7 +164,7 @@ index 4c65c1fa..e3d92b7d 100644
              let ctext = support::encrypt(
                  &mut bob_store,
                  &alice_address,
-@@ -400,12 +441,14 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
+@@ -400,12 +450,14 @@ pub fn session_encrypt_decrypt_result(c: &mut Criterion) -> Result<(), SignalPro
              .now_or_never()
              .expect("sync")
              .expect("success");
@@ -172,29 +180,8 @@ index 4c65c1fa..e3d92b7d 100644
  
      Ok(())
  }
-diff --git a/rust/protocol/src/bench_metrics.rs b/rust/protocol/src/bench_metrics.rs
-new file mode 100644
-index 00000000..2a6e0d98
---- /dev/null
-+++ b/rust/protocol/src/bench_metrics.rs
-@@ -0,0 +1,15 @@
-+use std::sync::atomic::{AtomicU64, Ordering};
-+
-+static DR_DH_RATCHET_COUNT: AtomicU64 = AtomicU64::new(0);
-+
-+pub fn reset_bench_dr_dh_ratchet_count() {
-+    DR_DH_RATCHET_COUNT.store(0, Ordering::Relaxed);
-+}
-+
-+pub fn bench_dr_dh_ratchet_count() -> u64 {
-+    DR_DH_RATCHET_COUNT.load(Ordering::Relaxed)
-+}
-+
-+pub(crate) fn increment_bench_dr_dh_ratchet_count() {
-+    DR_DH_RATCHET_COUNT.fetch_add(1, Ordering::Relaxed);
-+}
 diff --git a/rust/protocol/src/lib.rs b/rust/protocol/src/lib.rs
-index 49a271fe..c43120c2 100644
+index 49a271fe..3992c185 100644
 --- a/rust/protocol/src/lib.rs
 +++ b/rust/protocol/src/lib.rs
 @@ -22,6 +22,7 @@
@@ -205,11 +192,14 @@ index 49a271fe..c43120c2 100644
  mod consts;
  mod crypto;
  pub mod error;
-@@ -41,6 +42,7 @@ mod state;
+@@ -41,6 +42,10 @@ mod state;
  mod storage;
  mod timestamp;
  
-+pub use bench_metrics::{bench_dr_dh_ratchet_count, reset_bench_dr_dh_ratchet_count};
++pub use bench_metrics::{
++    bench_dr_dh_ratchet_count, bench_pq_ratchet_recv_count, bench_pq_ratchet_send_count,
++    reset_bench_dr_dh_ratchet_count, reset_bench_pq_ratchet_count,
++};
  use error::Result;
  pub use error::SignalProtocolError;
  pub use fingerprint::{
@@ -225,3 +215,67 @@ index d43a98d7..37ce4a2a 100644
  
      let root_key = state.root_key()?;
      let our_ephemeral = state.sender_ratchet_private_key()?;
+diff --git a/rust/protocol/src/state/session.rs b/rust/protocol/src/state/session.rs
+index 92bd6796..dae609a4 100644
+--- a/rust/protocol/src/state/session.rs
++++ b/rust/protocol/src/state/session.rs
+@@ -603,6 +603,7 @@ impl SessionState {
+         msg: &spqr::SerializedMessage,
+     ) -> Result<spqr::MessageKey, spqr::Error> {
+         let _trace = libsignal_debug::trace_block!("SessionState::pq_ratchet_recv");
++        crate::bench_metrics::increment_bench_pq_ratchet_recv_count();
+         let spqr::Recv { state, key } = spqr::recv(&self.session.pq_ratchet_state, msg)?;
+         self.session.pq_ratchet_state = state;
+         Ok(key)
+@@ -613,6 +614,7 @@ impl SessionState {
+         csprng: &mut R,
+     ) -> Result<(spqr::SerializedMessage, spqr::MessageKey), spqr::Error> {
+         let _trace = libsignal_debug::trace_block!("SessionState::pq_ratchet_send");
++        crate::bench_metrics::increment_bench_pq_ratchet_send_count();
+         let spqr::Send { state, key, msg } = spqr::send(&self.session.pq_ratchet_state, csprng)?;
+         self.session.pq_ratchet_state = state;
+         Ok((msg, key))
+diff --git a/rust/protocol/src/bench_metrics.rs b/rust/protocol/src/bench_metrics.rs
+new file mode 100644
+index 00000000..b9450a08
+--- /dev/null
++++ b/rust/protocol/src/bench_metrics.rs
+@@ -0,0 +1,38 @@
++use std::sync::atomic::{AtomicU64, Ordering};
++
++static DR_DH_RATCHET_COUNT: AtomicU64 = AtomicU64::new(0);
++static PQ_RATCHET_SEND_COUNT: AtomicU64 = AtomicU64::new(0);
++static PQ_RATCHET_RECV_COUNT: AtomicU64 = AtomicU64::new(0);
++
++pub fn reset_bench_dr_dh_ratchet_count() {
++    DR_DH_RATCHET_COUNT.store(0, Ordering::Relaxed);
++}
++
++pub fn reset_bench_pq_ratchet_count() {
++    PQ_RATCHET_SEND_COUNT.store(0, Ordering::Relaxed);
++    PQ_RATCHET_RECV_COUNT.store(0, Ordering::Relaxed);
++}
++
++pub fn bench_dr_dh_ratchet_count() -> u64 {
++    DR_DH_RATCHET_COUNT.load(Ordering::Relaxed)
++}
++
++pub fn bench_pq_ratchet_send_count() -> u64 {
++    PQ_RATCHET_SEND_COUNT.load(Ordering::Relaxed)
++}
++
++pub fn bench_pq_ratchet_recv_count() -> u64 {
++    PQ_RATCHET_RECV_COUNT.load(Ordering::Relaxed)
++}
++
++pub(crate) fn increment_bench_dr_dh_ratchet_count() {
++    DR_DH_RATCHET_COUNT.fetch_add(1, Ordering::Relaxed);
++}
++
++pub(crate) fn increment_bench_pq_ratchet_send_count() {
++    PQ_RATCHET_SEND_COUNT.fetch_add(1, Ordering::Relaxed);
++}
++
++pub(crate) fn increment_bench_pq_ratchet_recv_count() {
++    PQ_RATCHET_RECV_COUNT.fetch_add(1, Ordering::Relaxed);
++}

@@ -28,10 +28,9 @@ index 683d12ed..13efcf33 100644
 +    let recvs = BENCH_RECV_COUNT.load(Ordering::Relaxed);
 +    let iterations = sends.max(recvs);
 +    eprintln!(
-+        "[ratchet-counts] version=v073 bench=\"{name}\" iterations={iterations} sends={} recvs={} dr_symmetric={} dr_dh={} spqr_symmetric=0 braid_add_epoch=0",
++        "[ratchet-counts] version=v073 bench=\"{name}\" iterations={iterations} sends={} recvs={} dr_dh={} braid_add_epoch=0",
 +        sends,
 +        recvs,
-+        sends + recvs,
 +        bench_dr_dh_ratchet_count(),
 +    );
 +}

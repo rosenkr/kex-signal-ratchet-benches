@@ -27,10 +27,7 @@ R_SQUARED_RE = re.compile(
     r"<td class=\"ci-bound\">([^<]+)</td>"
 )
 RATCHET_RE = re.compile(
-    r'\[ratchet-counts\]\s+version=(\S+)\s+bench="([^"]+)"\s+'
-    r"iterations=(\d+)\s+sends=(\d+)\s+recvs=(\d+)\s+"
-    r"dr_symmetric=(\d+)\s+dr_dh=(\d+)\s+"
-    r"spqr_symmetric=(\d+)\s+braid_add_epoch=(\d+)"
+    r'\[ratchet-counts\]\s+version=(\S+)\s+bench="([^"]+)"\s+(.*)$'
 )
 
 
@@ -92,33 +89,35 @@ def load_ratchet_metrics(lines):
         match = RATCHET_RE.search(raw_line)
         if not match:
             continue
-        (
-            _version,
-            benchmark,
-            iterations,
-            sends,
-            recvs,
-            dr_symmetric,
-            dr_dh,
-            spqr_symmetric,
-            braid_add_epoch,
-        ) = match.groups()
+        _version, benchmark, tail = match.groups()
+        fields = {}
+        for token in tail.split():
+            if "=" not in token:
+                continue
+            key, value = token.split("=", 1)
+            fields[key] = value
         candidate = {
-            "ratchet_iterations": iterations,
-            "sends": sends,
-            "recvs": recvs,
-            "dr_symmetric": dr_symmetric,
-            "dr_dh": dr_dh,
-            "spqr_symmetric": spqr_symmetric,
-            "braid_add_epoch": braid_add_epoch,
+            "ratchet_iterations": fields.get("iterations", ""),
+            "sends": fields.get("sends", ""),
+            "recvs": fields.get("recvs", ""),
+            "dr_symmetric": fields.get("dr_symmetric", ""),
+            "dr_dh": fields.get("dr_dh", ""),
+            "spqr_symmetric": fields.get("spqr_symmetric", ""),
+            "pq_send": fields.get("pq_send", ""),
+            "pq_recv": fields.get("pq_recv", ""),
+            "spqr_send": fields.get("spqr_send", ""),
+            "spqr_recv": fields.get("spqr_recv", ""),
+            "spqr_chain_send": fields.get("spqr_chain_send", ""),
+            "spqr_chain_recv": fields.get("spqr_chain_recv", ""),
+            "braid_add_epoch": fields.get("braid_add_epoch", ""),
         }
         current = metrics.get(benchmark)
         if current is None:
             metrics[benchmark] = candidate
             continue
 
-        current_score = int(current["dr_symmetric"]) + int(current["spqr_symmetric"])
-        candidate_score = int(candidate["dr_symmetric"]) + int(candidate["spqr_symmetric"])
+        current_score = int(current["sends"] or 0) + int(current["recvs"] or 0)
+        candidate_score = int(candidate["sends"] or 0) + int(candidate["recvs"] or 0)
         if candidate_score > current_score:
             metrics[benchmark] = candidate
     return metrics
@@ -163,6 +162,12 @@ def parse_file(path: Path, criterion_root: Path | None):
                                 "dr_symmetric": ratchets.get("dr_symmetric", ""),
                                 "dr_dh": ratchets.get("dr_dh", ""),
                                 "spqr_symmetric": ratchets.get("spqr_symmetric", ""),
+                                "pq_send": ratchets.get("pq_send", ""),
+                                "pq_recv": ratchets.get("pq_recv", ""),
+                                "spqr_send": ratchets.get("spqr_send", ""),
+                                "spqr_recv": ratchets.get("spqr_recv", ""),
+                                "spqr_chain_send": ratchets.get("spqr_chain_send", ""),
+                                "spqr_chain_recv": ratchets.get("spqr_chain_recv", ""),
                                 "braid_add_epoch": ratchets.get("braid_add_epoch", ""),
                             })
                             seen.add(key)
@@ -197,6 +202,12 @@ def parse_file(path: Path, criterion_root: Path | None):
                             "dr_symmetric": ratchets.get("dr_symmetric", ""),
                             "dr_dh": ratchets.get("dr_dh", ""),
                             "spqr_symmetric": ratchets.get("spqr_symmetric", ""),
+                            "pq_send": ratchets.get("pq_send", ""),
+                            "pq_recv": ratchets.get("pq_recv", ""),
+                            "spqr_send": ratchets.get("spqr_send", ""),
+                            "spqr_recv": ratchets.get("spqr_recv", ""),
+                            "spqr_chain_send": ratchets.get("spqr_chain_send", ""),
+                            "spqr_chain_recv": ratchets.get("spqr_chain_recv", ""),
                             "braid_add_epoch": ratchets.get("braid_add_epoch", ""),
                         })
                         seen.add(key)
@@ -235,6 +246,12 @@ def main():
             "dr_symmetric",
             "dr_dh",
             "spqr_symmetric",
+            "pq_send",
+            "pq_recv",
+            "spqr_send",
+            "spqr_recv",
+            "spqr_chain_send",
+            "spqr_chain_recv",
             "braid_add_epoch",
         ]
     )
